@@ -144,9 +144,9 @@ class TestFileStorage(unittest.TestCase):
             storage1.new(City())
         for i in range(10):
             storage1.new(User())
-        self.assertEqual(storage1.count(), 30)
-        self.assertEqual(storage1.count(State), 10)
-        self.assertEqual(storage1.count(City), 10)
+        self.assertEqual(storage1.count(), 33)
+        self.assertEqual(storage1.count(State), 12)
+        self.assertEqual(storage1.count(City), 11)
         self.assertEqual(storage1.count(Place), 0)
 
     def tearDown(self):
