@@ -130,8 +130,9 @@ class TestFileStorage(unittest.TestCase):
         storage.new(state5)
         storage.save()
         key = 'State.' + state1.id
-        self.assertIs(storage.get(State, state1.id),
-                      state1)
+        self.assertIs(storage.get(State, state1.id), state1)
+        self.assertIs(storage.get(State, state2.id), state2)
+        self.assertIsNone(storage.get(State, 'invalid_id'))
 
     @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
     def test_count(self):
@@ -146,6 +147,7 @@ class TestFileStorage(unittest.TestCase):
         self.assertEqual(storage1.count(), 30)
         self.assertEqual(storage1.count(State), 10)
         self.assertEqual(storage1.count(City), 10)
+        self.assertEqual(storage1.count(Place), 0)
 
     def tearDown(self):
         # Delete file.json if it exists
