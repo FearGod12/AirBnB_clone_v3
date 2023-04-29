@@ -7,10 +7,10 @@ from models.amenity import Amenity
 
 
 @app_views.route('/amenities', methods=['GET'], strict_slashes=False)
-def get_amenities():
+def amenities():
     """ Retrieves the list of all Amenity objects """
-    d_amenities = storage.all(Amenity)
-    return jsonify([obj.to_dict() for obj in d_amenities.values()])
+    amenities = storage.all(Amenity)
+    return jsonify([amenity.to_dict() for amenity in amenities.values()])
 
 
 @app_views.route('/amenities/<amenity_id>', methods=['GET'],
@@ -32,7 +32,7 @@ def delete_amenity(amenity_id):
         abort(404)
     amenity.delete()
     storage.save()
-    return make_response(jsonify({}), 200)
+    return jsonify({}), 200
 
 
 @app_views.route('/amenities', methods=['POST'], strict_slashes=False)
@@ -46,7 +46,7 @@ def create_amenity():
     amenity = Amenity(**new_amenity)
     storage.new(amenity)
     storage.save()
-    return make_response(jsonify(amenity.to_dict()), 201)
+    return jsonify(amenity.to_dict()), 201
 
 
 @app_views.route('/amenities/<amenity_id>', methods=['PUT'],
@@ -66,4 +66,4 @@ def update_amenity(amenity_id):
             setattr(amenity, key, value)
 
     storage.save()
-    return make_response(jsonify(amenity.to_dict()), 200)
+    return jsonify(amenity.to_dict()), 200
