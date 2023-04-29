@@ -47,7 +47,7 @@ def delete_place(place_id):
 def create_place():
     """ Creates a Place object """
     cities = storage.all(City).values()
-    for city of cities:
+    for city in cities:
         if city.id == city_id:
             new_place = request.get_json(silent=True)
             if not new_place:
