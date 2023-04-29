@@ -5,6 +5,7 @@ from flask import jsonify, abort, make_response, request
 from models import storage
 from models.place import Place
 from models.city import City
+from models.user import User
 
 
 @app_views.route('/cities/<city_id>/places', methods=['GET'],
@@ -24,7 +25,7 @@ def get_place(place_id):
     """
     Retrieves a place object
     """
-    place = storage.get("Place", place_id)
+    place = storage.get(Place, place_id)
     if not place:
         abort(404)
     return jsonify(place.to_dict())
@@ -34,7 +35,7 @@ def get_place(place_id):
                  strict_slashes=False)
 def delete_place(place_id):
     """ Deletes a Place object"""
-    place = storage.get("Place", place_id)
+    place = storage.get(Place, place_id)
     if not place:
         abort(404)
     place.delete()
@@ -44,7 +45,7 @@ def delete_place(place_id):
 
 @app_views.route('/cities/<city_id>/places', methods=['POST'],
                  strict_slashes=False)
-def create_place():
+def create_place(city_id):
     """ Creates a Place object """
     cities = storage.all(City).values()
     for city in cities:
@@ -54,10 +55,11 @@ def create_place():
                 abort(400, "Not a JSON")
             if "user_id" not in new_place:
                 abort(400, "Missing user_id")
-            if storage.get('User', new_place['uer_id']) is None:
+            if storage.get(User, new_place['user_id']) is None:
                 abort(404)
             if 'name' not in new_place:
                 abort(400, "Missing name")
+            new_place["city_id"] = city_id
             place = Place(**new_place)
             storage.new(place)
             storage.save()
@@ -68,7 +70,7 @@ def create_place():
 @app_views.route('/places/<place_id>', methods=['PUT'], strict_slashes=False)
 def update_place(place_id):
     """ Updates a place object """
-    place = storage.get("Place", place_id)
+    place = storage.get(Place, place_id)
     if not place:
         abort(404)
 
@@ -81,4 +83,4 @@ def update_place(place_id):
             setattr(place, key, value)
 
     storage.save()
-    return jsonify(user.to_dict()), 200
+    return jsonify(place.to_dict()), 200
