@@ -21,13 +21,13 @@ def handle_cities(state_id):
     if request.method == 'GET':
         return jsonify([city.to_dict() for city in cities])
 
-    if request.method == 'POST':
+    elif request.method == 'POST':
         data = request.get_json(silent=True)
-        if data is None:
+        if data is None or type(data) != dict:
             return jsonify({"error": "Not a JSON"}), 400
         if data.get('name') is None:
             return jsonify({"error": "Missing name"}), 400
-
+        data["state_id"] = state_id
         new_city = City(**data)
         new_city.save()
         return jsonify(new_city.to_dict()), 201
