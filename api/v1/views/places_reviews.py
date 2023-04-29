@@ -6,7 +6,7 @@ from models import storage
 from models.place import Place
 from models.city import City
 from models.user import User
-from models.user import Review
+from models.review import Review
 
 
 @app_views.route('/places/<place_id>/reviews', methods=['GET'],
@@ -82,7 +82,7 @@ def update_review(review_id):
     for key, value in body_request.items():
         if key not in ['id', 'user_id', 'place_id',
                        'created_at', 'updated_at']:
-            setattr(place, key, value)
+            setattr(review, key, value)
 
     storage.save()
     return jsonify(review.to_dict()), 200
