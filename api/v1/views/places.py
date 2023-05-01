@@ -135,42 +135,38 @@ def search_places():
     return jsonify([place.to_dict() for place in places])
 
 
-@app_views.route('/places_search', methods=['POST'], strict_slashes=False)
 def search_places():
-    """ Searches for Place objects based on request body """
-    request_data = request.get_json(silent=True)
-    if not request_data:
-        abort(400, "Not a JSON")
+    """Retrieve all Place objects that fit search criteria"""
 
-    # Get lists of states, cities, and amenities from request data
+    # Parse request data
+    request_data = request.get_json()
+
+    # Get all places
+    places = storage.all(Place).values()
+
+    # Filter by state
     states = request_data.get("states", [])
+    if states:
+        state_places = []
+        for state_id in states:
+            state = storage.get(State, state_id)
+            if state:
+                for city in state.cities:
+                    state_places.extend(city.places)
+        places = list(set(places).intersection(state_places))
+
+    # Filter by city
     cities = request_data.get("cities", [])
+    if cities:
+        city_places = []
+        for city_id in cities:
+            city = storage.get(City, city_id)
+            if city:
+                city_places.extend(city.places)
+        places = list(set(places).intersection(city_places))
+
+    # Filter by amenities
     amenities = request_data.get("amenities", [])
-
-    # Get all places if no search criteria provided
-    if not states and not cities and not amenities:
-        places = storage.all(Place).values()
-        return jsonify([place.to_dict() for place in places])
-
-    # Get places based on states and cities
-    state_ids = set()
-    city_ids = set(cities)
-    for state_id in states:
-        state = storage.get(State, state_id)
-        if state:
-            state_ids.add(state.id)
-            for city in state.cities:
-                city_ids.add(city.id)
-
-    places = []
-    for city_id in city_ids:
-        city = storage.get(City, city_id)
-        if city:
-            for place in city.places:
-                if place not in places:
-                    places.append(place)
-
-    # Get places based on amenities
     if amenities:
         places_with_amenities = []
         for place in places:
@@ -179,4 +175,5 @@ def search_places():
                 places_with_amenities.append(place)
         places = places_with_amenities
 
+    # Convert to dictionary format and return as JSON response
     return jsonify([place.to_dict() for place in places])
