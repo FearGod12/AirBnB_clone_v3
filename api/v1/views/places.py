@@ -7,6 +7,7 @@ from models.place import Place
 from models.city import City
 from models.user import User
 from models.state import State
+from models.amenity import Amenity
 
 
 @app_views.route('/cities/<city_id>/places', methods=['GET'],
@@ -131,4 +132,48 @@ def search_places():
                 places_with_amenities.append(place)
         places = places_with_amenities
 
+    return jsonify([place.to_dict() for place in places])
+
+
+def search_places():
+    """Retrieve all Place objects that fit search criteria"""
+
+    # Parse request data
+    request_data = request.get_json()
+
+    # Get all places
+    places = storage.all(Place).values()
+
+    # Filter by state
+    states = request_data.get("states", [])
+    if states:
+        state_places = []
+        for state_id in states:
+            state = storage.get(State, state_id)
+            if state:
+                for city in state.cities:
+                    state_places.extend(city.places)
+        places = list(set(places).intersection(state_places))
+
+    # Filter by city
+    cities = request_data.get("cities", [])
+    if cities:
+        city_places = []
+        for city_id in cities:
+            city = storage.get(City, city_id)
+            if city:
+                city_places.extend(city.places)
+        places = list(set(places).intersection(city_places))
+
+    # Filter by amenities
+    amenities = request_data.get("amenities", [])
+    if amenities:
+        places_with_amenities = []
+        for place in places:
+            place_amenities = [amenity.id for amenity in place.amenities]
+            if set(amenities).issubset(set(place_amenities)):
+                places_with_amenities.append(place)
+        places = places_with_amenities
+
+    # Convert to dictionary format and return as JSON response
     return jsonify([place.to_dict() for place in places])
