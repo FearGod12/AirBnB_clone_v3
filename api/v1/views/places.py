@@ -136,7 +136,7 @@ def search_places():
 
 
 @app_views.route('/places_search', methods=['POST'], strict_slashes=False)
-def search_places():
+def place_search():
     """ Searches for Place objects based on request body """
     request_data = request.get_json(silent=True)
     if not request_data:
@@ -153,7 +153,7 @@ def search_places():
         return jsonify([place.to_dict() for place in places])
 
     # Get places based on states and cities
-    state_ids = set()
+    state_ids = set(states)
     city_ids = set(cities)
     for state_id in states:
         state = storage.get(State, state_id)
@@ -167,7 +167,8 @@ def search_places():
         city = storage.get(City, city_id)
         if city:
             for place in city.places:
-                if place not in places:
+                if place not in places and (not state_ids or
+                                            place.city.state_id in state_ids):
                     places.append(place)
 
     # Get places based on amenities
