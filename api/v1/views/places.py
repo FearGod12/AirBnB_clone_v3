@@ -135,54 +135,48 @@ def search_places():
     return jsonify([place.to_dict() for place in places])
 
 
-@app_views.route('/places_search', methods=['POST'],
-                 strict_slashes=False)
-def place_search():
-    """Returns a list of all Places objects matching search data"""
+@app_views.route('/places_search', methods=['POST'], strict_slashes=False)
+def search_places():
+    """ Searches for Place objects based on request body """
+    request_data = request.get_json(silent=True)
+    if not request_data:
+        abort(400, "Not a JSON")
 
-    data = request.get_json(silent=True)
-    if data is None:
-        return jsonify({'error': 'Not a JSON'}), 400
+    # Get lists of states, cities, and amenities from request data
+    states = request_data.get("states", [])
+    cities = request_data.get("cities", [])
+    amenities = request_data.get("amenities", [])
 
-    states = data.get('states', [])
-    cities = data.get('cities', [])
-    amenities = data.get('amenities', [])
-
-    places = set()
-
-    #  If states and cities are empty; retrive all Place objects
-    if not (len(states) + len(cities)):
-        places.update(storage.all(Place).values())
-        if not len(amenities):
-            return jsonify([place.to_dict() for place in places])
-    else:  # else
-        for state_id in states:
-            state = storage.get(State, state_id)
-            if state is None:
-                abort(404)
-            for city in state.cities:
-                places.update(city.places)
-
-        for city_id in cities:
-            city = storage.get(City, city_id)
-            if city is None:
-                abort(404)
-            places.update(city.places)
-
-    if not len(amenities):
+    # Get all places if no search criteria provided
+    if not states and not cities and not amenities:
+        places = storage.all(Place).values()
         return jsonify([place.to_dict() for place in places])
 
-    #  Filter results with amenities if exists
-    a_filter = [storage.get(Amenity, amenity_id) for amenity_id in
-                amenities if storage.get(Amenity, amenity_id) is not None]
-    results = set()
-    for place in places:
-        if len(set(a_filter).intersection(set(place.amenities))):
-            #  patch SQLAlchemy bug
-            try:
-                del place.amenities
-            except AttributeError:
-                pass
-            results.add(place)
+    # Get places based on states and cities
+    state_ids = set()
+    city_ids = set(cities)
+    for state_id in states:
+        state = storage.get(State, state_id)
+        if state:
+            state_ids.add(state.id)
+            for city in state.cities:
+                city_ids.add(city.id)
 
-    return jsonify([place.to_dict() for place in results])
+    places = []
+    for city_id in city_ids:
+        city = storage.get(City, city_id)
+        if city:
+            for place in city.places:
+                if place not in places:
+                    places.append(place)
+
+    # Get places based on amenities
+    if amenities:
+        places_with_amenities = []
+        for place in places:
+            place_amenities = [amenity.id for amenity in place.amenities]
+            if set(amenities).issubset(set(place_amenities)):
+                places_with_amenities.append(place)
+        places = places_with_amenities
+
+    return jsonify([place.to_dict() for place in places])
